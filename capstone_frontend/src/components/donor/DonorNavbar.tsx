@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Heart, Moon, Sun, User, LogOut, UserCircle, History, TrendingUp, Bell, AlertTriangle } from "lucide-react";
+import { Heart, Moon, Sun, User, LogOut, UserCircle, History, TrendingUp, Bell, AlertTriangle, Settings, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -92,61 +92,25 @@ export const DonorNavbar = () => {
               Charities
             </NavLink>
             <NavLink
-              to="/donor/leaderboard"
+              to="/donor/history"
               className={({ isActive }) =>
                 `text-sm font-medium transition-colors hover:text-primary ${
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`
               }
             >
-              Leaderboard
+              My Donations
             </NavLink>
             <NavLink
-              to="/donor/reports"
+              to="/donor/help"
               className={({ isActive }) =>
                 `text-sm font-medium transition-colors hover:text-primary ${
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`
               }
             >
-              Reports
+              Help Center
             </NavLink>
-            <NavLink
-              to="/donor/about"
-              className={({ isActive }) =>
-                `text-sm font-medium transition-colors hover:text-primary ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`
-              }
-            >
-              About
-            </NavLink>
-            
-            {/* Profile Dropdown in Navbar */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="text-sm font-medium transition-colors hover:text-primary text-muted-foreground flex items-center gap-1">
-                  Profile
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => navigate('/donor/profile')} className="cursor-pointer">
-                  <UserCircle className="mr-2 h-4 w-4" />
-                  My Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/donor/history')} className="cursor-pointer">
-                  <History className="mr-2 h-4 w-4" />
-                  Donation History
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/donor/transparency')} className="cursor-pointer">
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Fund Transparency
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
           {/* Right Side Actions */}
@@ -188,13 +152,16 @@ export const DonorNavbar = () => {
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 transition-colors">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors">
+                    <User className="h-5 w-5 text-primary" />
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent 
+                align="end" 
+                className="w-64 shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-2"
+              >
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{user?.name || 'Donor'}</p>
@@ -202,26 +169,58 @@ export const DonorNavbar = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/donor/profile')} className="cursor-pointer md:hidden">
-                  <UserCircle className="mr-2 h-4 w-4" />
-                  My Profile
+                
+                {/* Profile Section */}
+                <DropdownMenuItem 
+                  onClick={() => navigate('/donor/profile')} 
+                  className="cursor-pointer hover:bg-primary/10 focus:bg-primary/10 transition-colors py-2"
+                >
+                  <UserCircle className="mr-3 h-4 w-4 text-primary" />
+                  <span className="font-medium">My Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/donor/history')} className="cursor-pointer md:hidden">
-                  <History className="mr-2 h-4 w-4" />
-                  Donation History
+                
+                <DropdownMenuItem 
+                  onClick={() => navigate('/donor/edit-profile')} 
+                  className="cursor-pointer hover:bg-primary/10 focus:bg-primary/10 transition-colors py-2"
+                >
+                  <Settings className="mr-3 h-4 w-4 text-primary" />
+                  <span className="font-medium">Edit Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/donor/transparency')} className="cursor-pointer md:hidden">
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Fund Transparency
+                
+                <DropdownMenuItem 
+                  onClick={() => navigate('/donor/settings')} 
+                  className="cursor-pointer hover:bg-primary/10 focus:bg-primary/10 transition-colors py-2"
+                >
+                  <Settings className="mr-3 h-4 w-4 text-primary" />
+                  <span className="font-medium">Account Settings</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/donor/reports')} className="cursor-pointer md:hidden">
-                  <AlertTriangle className="mr-2 h-4 w-4" />
-                  Reports
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="md:hidden" />
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
+                
+                <DropdownMenuSeparator />
+                
+                {/* Mobile-only navigation items */}
+                <div className="md:hidden">
+                  <DropdownMenuItem onClick={() => navigate('/donor/history')} className="cursor-pointer hover:bg-muted transition-colors py-2">
+                    <History className="mr-3 h-4 w-4" />
+                    Donation History
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/donor/transparency')} className="cursor-pointer hover:bg-muted transition-colors py-2">
+                    <TrendingUp className="mr-3 h-4 w-4" />
+                    Fund Transparency
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/donor/help')} className="cursor-pointer hover:bg-muted transition-colors py-2">
+                    <HelpCircle className="mr-3 h-4 w-4" />
+                    Help Center
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </div>
+                
+                {/* Logout */}
+                <DropdownMenuItem 
+                  onClick={handleLogout} 
+                  className="cursor-pointer text-destructive hover:text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 transition-colors py-2"
+                >
+                  <LogOut className="mr-3 h-4 w-4" />
+                  <span className="font-medium">Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

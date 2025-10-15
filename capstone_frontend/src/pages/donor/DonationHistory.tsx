@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, Eye, Filter, Calendar } from "lucide-react";
+import { Download, Eye, Filter, Calendar, Search, Heart, TrendingUp, Award, DollarSign } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { authService } from "@/services/auth";
 
@@ -38,6 +39,7 @@ export default function DonationHistory() {
   const [loading, setLoading] = useState<boolean>(true);
 
   const [filterStatus, setFilterStatus] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedDonation, setSelectedDonation] = useState<DonationRow | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -107,13 +109,20 @@ export default function DonationHistory() {
     }
   };
 
-  const filteredDonations = filterStatus === "all"
-    ? donations
-    : donations.filter(d => d.status === filterStatus);
+  const filteredDonations = donations
+    .filter(d => filterStatus === "all" || d.status === filterStatus)
+    .filter(d => 
+      searchQuery === "" ||
+      d.charity.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.campaign.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
-  const totalDonated = donations
-    .filter(d => d.status === 'completed')
-    .reduce((sum, d) => sum + d.amount, 0);
+  const completedDonations = donations.filter(d => d.status === 'completed');
+  const totalDonated = completedDonations.reduce((sum, d) => sum + d.amount, 0);
+  const totalCampaigns = new Set(donations.map(d => d.campaign)).size;
+  const averageDonation = completedDonations.length > 0 
+    ? totalDonated / completedDonations.length 
+    : 0;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -140,9 +149,14 @@ export default function DonationHistory() {
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-background border-b">
         <div className="max-w-7xl mx-auto px-4 py-12">
-          <h1 className="text-4xl font-bold mb-4">Donation History</h1>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Heart className="h-6 w-6 text-primary" />
+            </div>
+            <h1 className="text-4xl font-bold">My Donations</h1>
+          </div>
           <p className="text-xl text-muted-foreground">
-            Track all your contributions and their impact
+            View and track your donation history and impact
           </p>
         </div>
       </div>
@@ -151,45 +165,127 @@ export default function DonationHistory() {
       <div className="max-w-7xl mx-auto px-4 py-12 space-y-6">
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card>
+          <Card className="border-l-4 border-l-green-500">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Donated</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Donated</CardTitle>
+                <DollarSign className="h-4 w-4 text-green-600" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-3xl font-bold text-green-600">
                 ₱{totalDonated.toLocaleString()}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {completedDonations.length} completed donations
+              </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Donations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{donations.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Charities Supported</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {new Set(donations.map(d => d.charity)).size}
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Campaigns Supported</CardTitle>
+                <TrendingUp className="h-4 w-4 text-blue-600" />
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Recurring Donations</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {donations.filter(d => d.type === 'recurring').length}
+              <div className="text-3xl font-bold text-blue-600">{totalCampaigns}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Across {new Set(donations.map(d => d.charity)).size} charities
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-purple-500">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Donations</CardTitle>
+                <Heart className="h-4 w-4 text-purple-600" />
               </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-purple-600">{donations.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {donations.filter(d => d.type === 'recurring').length} recurring
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-amber-500">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Average Donation</CardTitle>
+                <Award className="h-4 w-4 text-amber-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-amber-600">
+                ₱{averageDonation.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Per completed donation
+              </p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Impact Summary */}
+        {completedDonations.length > 0 && (
+          <Card className="bg-gradient-to-br from-primary/5 to-background">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="h-5 w-5 text-primary" />
+                Your Impact
+              </CardTitle>
+              <CardDescription>See how your generosity is making a difference</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Impact Message */}
+              <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                <p className="text-lg font-semibold text-foreground mb-2">
+                  🎉 Thank you for your generosity!
+                </p>
+                <p className="text-muted-foreground">
+                  Your donations have supported <span className="font-bold text-primary">{totalCampaigns} campaigns</span> across{" "}
+                  <span className="font-bold text-primary">{new Set(donations.map(d => d.charity)).size} charities</span>.
+                  You've made a real difference in the lives of those in need!
+                </p>
+              </div>
+
+              {/* Charity Distribution */}
+              <div>
+                <h3 className="font-semibold mb-3">Donation Distribution by Charity</h3>
+                <div className="space-y-3">
+                  {Object.entries(
+                    completedDonations.reduce((acc, d) => {
+                      acc[d.charity] = (acc[d.charity] || 0) + d.amount;
+                      return acc;
+                    }, {} as Record<string, number>)
+                  )
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 5)
+                    .map(([charity, amount]) => {
+                      const percentage = (amount / totalDonated) * 100;
+                      return (
+                        <div key={charity}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium">{charity}</span>
+                            <span className="text-sm text-muted-foreground">
+                              ₱{amount.toLocaleString()} ({percentage.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div
+                              className="bg-gradient-to-r from-primary to-primary/60 h-2 rounded-full transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Donations Table */}
         <Card>
@@ -200,6 +296,15 @@ export default function DonationHistory() {
                 <CardDescription>Your complete donation history</CardDescription>
               </div>
               <div className="flex gap-2">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by charity or campaign..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
                   <SelectTrigger className="w-[180px]">
                     <Filter className="mr-2 h-4 w-4" />
