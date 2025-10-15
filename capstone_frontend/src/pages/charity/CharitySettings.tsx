@@ -56,8 +56,10 @@ export default function CharitySettings() {
       if (cid) {
         charityService.getDonationChannels(cid).then((data) => {
           setChannels(Array.isArray(data) ? data : []);
-        }).catch(() => {
-          // ignore errors (e.g., 403)
+        }).catch((error) => {
+          console.warn('Could not load donation channels:', error.response?.status, error.response?.data);
+          // Set empty array if channels can't be loaded
+          setChannels([]);
         });
       }
     }
