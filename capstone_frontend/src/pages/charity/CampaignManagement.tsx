@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { campaignService, Campaign as ApiCampaign, DonationChannel } from "@/services/campaigns";
+import { charityService } from "@/services/charity";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CampaignCard, Campaign as CampaignCardType } from "@/components/charity/CampaignCard";
 import { CampaignCardSkeleton } from "@/components/charity/CampaignCardSkeleton";
@@ -52,8 +53,7 @@ export default function CampaignManagement() {
     startDate: "",
     endDate: "",
     donationType: "one_time" as "one_time" | "recurring",
-    status: "draft" as "draft" | "published" | "closed" | "archived",
-    donationChannelId: "" as string | number | "",
+    status: "published" as "draft" | "published" | "closed" | "archived",
     image: null as File | null
   });
 
@@ -98,8 +98,13 @@ export default function CampaignManagement() {
   const loadChannels = async () => {
     try {
       if (!user?.charity?.id) return;
-      const data = await campaignService.getDonationChannels(user.charity.id);
-      setChannels(Array.isArray(data) ? data : []);
+      const data = await charityService.getDonationChannels(Number(user.charity.id));
+      const list = Array.isArray(data) ? data : [];
+      setChannels(list);
+      // If no channel selected yet, preselect the first available one for convenience
+      if (!formData.donationChannelId && list.length > 0) {
+        setFormData((prev) => ({ ...prev, donationChannelId: String(list[0].id) }));
+      }
     } catch (e) {
       // ignore silently if forbidden for unauthenticated
       setChannels([]);
@@ -131,7 +136,6 @@ export default function CampaignManagement() {
         end_date: formData.endDate,
         donation_type: formData.donationType,
         status: formData.status,
-        donation_channel_id: formData.donationChannelId ? Number(formData.donationChannelId) : undefined,
         cover_image: formData.image || undefined
       };
 
@@ -142,7 +146,15 @@ export default function CampaignManagement() {
       loadCampaigns();
     } catch (error: any) {
       console.error("Failed to create campaign:", error);
-      toast.error(error.response?.data?.message || "Failed to create campaign");
+      const msg = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'Failed to create campaign';
+      const errs = error?.response?.data?.errors;
+      if (errs && typeof errs === 'object') {
+        const first = Object.values(errs)[0] as any;
+        const firstMsg = Array.isArray(first) ? first[0] : String(first);
+        toast.error(`${msg}: ${firstMsg}`);
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -167,7 +179,6 @@ export default function CampaignManagement() {
       endDate: formatDateForInput(campaign.end_date),
       donationType: campaign.donation_type,
       status: campaign.status,
-      donationChannelId: (campaign as any).donation_channel_id || "",
       image: null
     });
     setIsEditDialogOpen(true);
@@ -237,8 +248,7 @@ export default function CampaignManagement() {
       startDate: "",
       endDate: "",
       donationType: "one_time",
-      status: "draft" as "draft" | "published" | "closed" | "archived",
-      donationChannelId: "",
+      status: "published" as "draft" | "published" | "closed" | "archived",
       image: null
     });
     setSelectedCampaign(null);
@@ -598,24 +608,7 @@ export default function CampaignManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="donationChannel">Donation Channel</Label>
-                <Select
-                  value={String(formData.donationChannelId)}
-                  onValueChange={(value: string) => setFormData({ ...formData, donationChannelId: value })}
-                >
-                  <SelectTrigger id="donationChannel">
-                    <SelectValue placeholder="Select a channel (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {channels.map((ch) => (
-                      <SelectItem key={ch.id} value={String(ch.id)}>
-                        {ch.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Donation channels are not selected per campaign; all available channels are displayed to donors. */}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -751,24 +744,7 @@ export default function CampaignManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-donationChannel">Donation Channel</Label>
-                <Select
-                  value={String(formData.donationChannelId)}
-                  onValueChange={(value: string) => setFormData({ ...formData, donationChannelId: value })}
-                >
-                  <SelectTrigger id="edit-donationChannel">
-                    <SelectValue placeholder="Select a channel (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {channels.map((ch) => (
-                      <SelectItem key={ch.id} value={String(ch.id)}>
-                        {ch.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Donation channels are not edited per campaign; donors see all available charity channels. */}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

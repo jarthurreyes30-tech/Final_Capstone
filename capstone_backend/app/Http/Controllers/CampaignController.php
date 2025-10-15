@@ -6,6 +6,7 @@ use App\Models\{Campaign, Charity};
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class CampaignController extends Controller
 {
@@ -36,7 +37,6 @@ class CampaignController extends Controller
                 'donation_type' => 'required|in:one_time,recurring',
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date|after_or_equal:start_date',
-                'donation_channel_id' => 'nullable|exists:donation_channels,id',
                 'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
             ]);
 
@@ -50,7 +50,32 @@ class CampaignController extends Controller
                 $data['status'] = 'draft';
             }
 
-            $campaign = $charity->campaigns()->create($data);
+            // Build payload of only known, safe keys
+            $payload = [
+                'title' => $data['title'],
+                'description' => $data['description'] ?? null,
+                'problem' => $data['problem'] ?? null,
+                'solution' => $data['solution'] ?? null,
+                'expected_outcome' => $data['expected_outcome'] ?? null,
+                'target_amount' => $data['target_amount'] ?? 0,
+                'deadline_at' => $data['deadline_at'] ?? null,
+                'status' => $data['status'],
+                'donation_type' => $data['donation_type'],
+                'start_date' => $data['start_date'] ?? null,
+                'end_date' => $data['end_date'] ?? null,
+            ];
+            if (!empty($data['cover_image_path'])) {
+                $payload['cover_image_path'] = $data['cover_image_path'];
+            }
+
+            // Filter payload keys to those that exist in the campaigns table
+            foreach (array_keys($payload) as $key) {
+                if (!Schema::hasColumn('campaigns', $key)) {
+                    unset($payload[$key]);
+                }
+            }
+
+            $campaign = $charity->campaigns()->create($payload);
 
             return response()->json([
                 'message' => 'Campaign created successfully',

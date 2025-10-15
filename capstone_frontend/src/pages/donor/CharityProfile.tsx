@@ -640,14 +640,23 @@ export default function CharityProfile() {
                             </div>
                           </div>
 
-                          {/* Action Button */}
-                          <Button 
-                            className="w-full h-9 bg-primary hover:bg-primary/90 text-sm" 
-                            onClick={() => navigate(`/donor/donate/${charity.id}`)}
-                          >
-                            <Heart className="w-3.5 h-3.5 mr-1.5" />
-                            Donate Now
-                          </Button>
+                          {/* Action Buttons */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button 
+                              variant="outline"
+                              className="h-9 text-sm"
+                              onClick={() => navigate(`/campaigns/${campaign.id}`)}
+                            >
+                              View Campaign
+                            </Button>
+                            <Button 
+                              className="h-9 bg-primary hover:bg-primary/90 text-sm" 
+                              onClick={() => navigate(`/donor/donate/${charity.id}`)}
+                            >
+                              <Heart className="w-3.5 h-3.5 mr-1.5" />
+                              Donate Now
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
                     );

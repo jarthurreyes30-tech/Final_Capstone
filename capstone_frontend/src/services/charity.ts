@@ -29,14 +29,59 @@ class CharityService {
     });
   }
 
-  // Get donation channel
-  async getDonationChannel(channelId: number) {
-    const res = await this.api.get(`/channels/${channelId}`);
+  // Get all donation channels for a charity (owner/donor access)
+  async getDonationChannels(charityId: number) {
+    try {
+      // Prefer owner-manage endpoint (requires charity_admin + owner)
+      const res = await this.api.get(`/api/charities/${charityId}/channels/manage`);
+      return res.data;
+    } catch (e: any) {
+      // Fallback to public/donor-visible endpoint if manage is forbidden
+      if (e?.response?.status === 403) {
+        const res2 = await this.api.get(`/api/charities/${charityId}/channels`);
+        return res2.data;
+      }
+      throw e;
+    }
+  }
+
+  // Create a new donation channel for a charity
+  async createDonationChannel(
+    charityId: number,
+    payload: {
+      type: 'gcash' | 'paymaya' | 'paypal' | 'bank' | 'other';
+      label: string;
+      details?: Record<string, any>;
+      qr_image?: File | null;
+      is_active?: boolean;
+    }
+  ) {
+    const fd = new FormData();
+    fd.append('type', payload.type);
+    fd.append('label', payload.label);
+    if (payload.is_active !== undefined) fd.append('is_active', String(payload.is_active));
+
+    if (payload.details) {
+      Object.entries(payload.details).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') {
+          fd.append(`details[${k}]`, String(v));
+        }
+      });
+    }
+
+    if (payload.qr_image) {
+      fd.append('qr_image', payload.qr_image);
+    }
+
+    const res = await this.api.post(`/api/charities/${charityId}/channels`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return res.data;
   }
 
-  // Update existing donation channel
+  // Update an existing donation channel (owner)
   async updateDonationChannel(
+    charityId: number,
     channelId: number,
     payload: {
       type?: 'gcash' | 'paymaya' | 'paypal' | 'bank' | 'other';
@@ -47,28 +92,28 @@ class CharityService {
     }
   ) {
     const fd = new FormData();
-    
     if (payload.type) fd.append('type', payload.type);
     if (payload.label) fd.append('label', payload.label);
     if (payload.is_active !== undefined) fd.append('is_active', String(payload.is_active));
-    
     if (payload.details) {
       Object.entries(payload.details).forEach(([k, v]) => {
-        if (v !== undefined && v !== null) fd.append(`details[${k}]`, String(v));
+        if (v !== undefined && v !== null && v !== '') {
+          fd.append(`details[${k}]`, String(v));
+        }
       });
     }
-    
     if (payload.qr_image) fd.append('qr_image', payload.qr_image);
-    
-    const res = await this.api.put(`/channels/${channelId}`, fd, {
+
+    const res = await this.api.post(`/api/charities/${charityId}/channels/${channelId}?_method=PUT`, fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return res.data;
   }
 
-  // Delete donation channel
-  async deleteDonationChannel(channelId: number) {
-    await this.api.delete(`/channels/${channelId}`);
+  // Delete a donation channel (owner)
+  async deleteDonationChannel(charityId: number, channelId: number) {
+    const res = await this.api.delete(`/api/charities/${charityId}/channels/${channelId}`);
+    return res.data;
   }
 
   // Get charity dashboard stats

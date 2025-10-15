@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,11 +75,13 @@ interface Supporter {
 export default function CampaignPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [updates, setUpdates] = useState<Update[]>([]);
   const [supporters, setSupporters] = useState<Supporter[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("story");
+  const [channels, setChannels] = useState<any[]>([]);
 
   useEffect(() => {
     loadCampaignData();
@@ -176,6 +179,24 @@ export default function CampaignPage() {
       setCampaign(mappedCampaign);
       setUpdates(campaignUpdates);
       setSupporters(campaignSupporters);
+
+      // Load donation channels for this campaign's charity (for donor/owner visibility)
+      try {
+        const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+        if (mappedCampaign.charity?.id) {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/charities/${mappedCampaign.charity.id}/channels`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          });
+          if (res.ok) {
+            const ch = await res.json();
+            setChannels(Array.isArray(ch?.data) ? ch.data : Array.isArray(ch) ? ch : []);
+          } else {
+            setChannels([]);
+          }
+        }
+      } catch {
+        setChannels([]);
+      }
     } catch (error) {
       console.error("Failed to load campaign:", error);
       toast({
@@ -657,14 +678,15 @@ export default function CampaignPage() {
 
                   {/* CTA Buttons */}
                   <div className="space-y-3">
-                    <Button
-                      size="lg"
-                      className="w-full bg-primary hover:bg-primary/90 text-lg h-12"
-                      onClick={() => navigate(`/campaigns/${campaign.id}/donate`)}
-                    >
-                      <Heart className="mr-2 h-5 w-5" />
-                      Donate Now
-                    </Button>
+                    {user?.role !== 'charity_admin' && (
+                      <Button
+                        className="w-full bg-primary hover:bg-primary/90 text-lg h-12"
+                        onClick={() => navigate(`/campaigns/${campaign.id}/donate`)}
+                      >
+                        <Heart className="mr-2 h-5 w-5" />
+                        Donate Now
+                      </Button>
+                    )}
 
                     {/* Share Buttons */}
                     <div className="flex gap-2">
@@ -695,6 +717,53 @@ export default function CampaignPage() {
                       </Button>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Donation Channels (visible to logged-in donors or owner; handled by API) */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Donation Channels</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {channels.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Login as a donor to view available channels.</p>
+                  ) : (
+                    <div className="grid gap-3">
+                      {channels.map((ch) => (
+                        <div key={ch.id} className="border rounded-md p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <div>
+                              <p className="text-xs text-muted-foreground uppercase">{ch.type}</p>
+                              <p className="font-semibold">{ch.label}</p>
+                            </div>
+                            <Badge variant="secondary">{ch.is_active ? 'Active' : 'Inactive'}</Badge>
+                          </div>
+                          {ch.details?.qr_image && (
+                            <img
+                              src={`${import.meta.env.VITE_API_URL}/storage/${ch.details.qr_image}`}
+                              alt={`${ch.label} QR`}
+                              className="w-28 h-28 object-contain border rounded bg-white mt-2"
+                            />
+                          )}
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            {ch.type === 'bank' ? (
+                              <>
+                                {ch.details?.bank_name && <p>Bank: {ch.details.bank_name}</p>}
+                                {ch.details?.account_name && <p>Account Name: {ch.details.account_name}</p>}
+                                {ch.details?.account_number && <p>Account No: {ch.details.account_number}</p>}
+                              </>
+                            ) : (
+                              <>
+                                {ch.details?.recipient && <p>Recipient: {ch.details.recipient}</p>}
+                                {ch.details?.number && <p>Number/Email: {ch.details.number}</p>}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

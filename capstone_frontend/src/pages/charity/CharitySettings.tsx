@@ -24,6 +24,7 @@ export default function CharitySettings() {
 
   // Donation Channels state
   const [channels, setChannels] = useState<any[]>([]);
+  const [editingChannelId, setEditingChannelId] = useState<number | null>(null);
   const [channelForm, setChannelForm] = useState<{
     type: 'gcash' | 'paymaya' | 'paypal' | 'bank' | 'other';
     label: string;
@@ -118,24 +119,100 @@ export default function CharitySettings() {
         toast.error('Please enter a label for the channel');
         return;
       }
+      // Client-side required details validation to avoid backend 422
+      if (channelForm.type === 'bank') {
+        const missing: string[] = [];
+        if (!channelForm.details?.bank_name) missing.push('Bank Name');
+        if (!channelForm.details?.account_name) missing.push('Account Name');
+        if (!channelForm.details?.account_number) missing.push('Account Number');
+        if (missing.length) {
+          toast.error(`Please provide: ${missing.join(', ')}`);
+          return;
+        }
+      } else {
+        const missing: string[] = [];
+        if (!channelForm.details?.recipient) missing.push('Recipient Name');
+        if (!channelForm.details?.number) missing.push('Number / Email');
+        if (missing.length) {
+          toast.error(`Please provide: ${missing.join(', ')}`);
+          return;
+        }
+      }
       setSavingChannel(true);
       const cid = Number(user.charity.id);
-      await charityService.createDonationChannel(cid, {
-        type: channelForm.type,
-        label: channelForm.label,
-        details: channelForm.details,
-        qr_image: channelForm.qr_image,
-      });
-      toast.success('Donation channel added');
+      if (editingChannelId) {
+        await charityService.updateDonationChannel(cid, editingChannelId, {
+          type: channelForm.type,
+          label: channelForm.label,
+          details: channelForm.details,
+          qr_image: channelForm.qr_image || undefined,
+        });
+        toast.success('Donation channel updated');
+      } else {
+        await charityService.createDonationChannel(cid, {
+          type: channelForm.type,
+          label: channelForm.label,
+          details: channelForm.details,
+          qr_image: channelForm.qr_image,
+        });
+        toast.success('Donation channel added');
+      }
       // refresh list
       const data = await charityService.getDonationChannels(cid);
       setChannels(Array.isArray(data) ? data : []);
       // reset form
       setChannelForm({ type: 'gcash', label: '', details: {}, qr_image: null });
+      setEditingChannelId(null);
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || 'Failed to add channel');
+      const status = e?.response?.status;
+      const msg = e?.response?.data?.message || e?.message || 'Failed to add channel';
+      toast.error(`${msg}${status ? ` (HTTP ${status})` : ''}`);
     } finally {
       setSavingChannel(false);
+    }
+  };
+
+  const handleEditChannel = (ch: any) => {
+    setEditingChannelId(ch.id);
+    setChannelForm({
+      type: ch.type,
+      label: ch.label,
+      details: ch.details || {},
+      qr_image: null,
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingChannelId(null);
+    setChannelForm({ type: 'gcash', label: '', details: {}, qr_image: null });
+  };
+
+  const handleToggleActive = async (ch: any) => {
+    try {
+      if (!user?.charity?.id) return;
+      const cid = Number(user.charity.id);
+      await charityService.updateDonationChannel(cid, ch.id, { is_active: !ch.is_active });
+      const data = await charityService.getDonationChannels(cid);
+      setChannels(Array.isArray(data) ? data : []);
+      toast.success(`Channel ${!ch.is_active ? 'activated' : 'deactivated'}`);
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Failed to update channel status');
+    }
+  };
+
+  const handleDeleteChannel = async (id: number) => {
+    try {
+      if (!user?.charity?.id) return;
+      if (!confirm('Delete this channel? This cannot be undone.')) return;
+      const cid = Number(user.charity.id);
+      await charityService.deleteDonationChannel(cid, id);
+      const data = await charityService.getDonationChannels(cid);
+      setChannels(Array.isArray(data) ? data : []);
+      // reset edit if same
+      if (editingChannelId === id) handleCancelEdit();
+      toast.success('Channel deleted');
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Failed to delete channel');
     }
   };
 
@@ -403,6 +480,13 @@ export default function CharitySettings() {
                   {ch.details?.qr_image && (
                     <img src={`${import.meta.env.VITE_API_URL}/storage/${ch.details.qr_image}`} alt={`${ch.label} QR`} className="w-32 h-32 object-contain border rounded bg-white" />
                   )}
+                  <div className="flex gap-2 mt-3">
+                    <Button variant="outline" size="sm" onClick={() => handleEditChannel(ch)}>Edit</Button>
+                    <Button variant="outline" size="sm" onClick={() => handleToggleActive(ch)}>
+                      {ch.is_active ? 'Deactivate' : 'Activate'}
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDeleteChannel(ch.id)}>Delete</Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -472,7 +556,12 @@ export default function CharitySettings() {
               <p className="text-xs text-muted-foreground">JPG/PNG up to 4MB</p>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              {editingChannelId && (
+                <Button variant="outline" onClick={handleCancelEdit} disabled={savingChannel}>
+                  Cancel
+                </Button>
+              )}
               <Button onClick={handleCreateChannel} disabled={savingChannel}>
                 {savingChannel ? (
                   <>
@@ -482,7 +571,7 @@ export default function CharitySettings() {
                 ) : (
                   <>
                     <PlusCircle className="h-4 w-4 mr-2" />
-                    Add Channel
+                    {editingChannelId ? 'Save Changes' : 'Add Channel'}
                   </>
                 )}
               </Button>

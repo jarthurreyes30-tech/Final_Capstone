@@ -120,6 +120,10 @@ Route::middleware(['auth:sanctum','role:charity_admin'])->group(function(){
   Route::post('/charities/{charity}/documents', [CharityController::class,'uploadDocument']);
 
   Route::post('/charities/{charity}/channels', [CharityController::class,'storeChannel']);
+  Route::get('/charities/{charity}/channels/manage', [CharityController::class,'channelsAdmin']);
+  Route::put('/charities/{charity}/channels/{channel}', [CharityController::class,'updateChannel']);
+  Route::patch('/charities/{charity}/channels/{channel}', [CharityController::class,'updateChannel']);
+  Route::delete('/charities/{charity}/channels/{channel}', [CharityController::class,'destroyChannel']);
 
   Route::post('/charities/{charity}/campaigns', [CampaignController::class,'store']);
   Route::put('/campaigns/{campaign}', [CampaignController::class,'update']);

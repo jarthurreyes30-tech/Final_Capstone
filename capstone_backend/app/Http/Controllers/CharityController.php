@@ -231,6 +231,51 @@ class CharityController extends Controller
         ]);
     }
 
+    // Update donation channel
+    public function updateChannel(Request $r, Charity $charity, \App\Models\DonationChannel $channel)
+    {
+        abort_unless($charity->owner_id === $r->user()->id, 403);
+        abort_unless($channel->charity_id === $charity->id, 404);
+
+        $data = $r->validate([
+            'type'=>'sometimes|in:gcash,paymaya,paypal,bank,other',
+            'label'=>'sometimes|string|max:255',
+            'details'=>'sometimes|array',
+            'is_active'=>'sometimes|boolean',
+            'qr_image' => 'sometimes|image|mimes:jpeg,png,jpg|max:4096'
+        ]);
+
+        $update = [];
+        if (array_key_exists('type', $data)) $update['type'] = $data['type'];
+        if (array_key_exists('label', $data)) $update['label'] = $data['label'];
+        if (array_key_exists('is_active', $data)) $update['is_active'] = $data['is_active'];
+
+        // Merge details
+        $details = $channel->details ?? [];
+        if (array_key_exists('details', $data)) {
+            $details = array_merge($details, $data['details'] ?? []);
+        }
+        if ($r->hasFile('qr_image')) {
+            $qrPath = $r->file('qr_image')->store('donation_qr', 'public');
+            $details['qr_image'] = $qrPath;
+        }
+        if (!empty($details)) {
+            $update['details'] = $details;
+        }
+
+        $channel->update($update);
+        return $channel->fresh();
+    }
+
+    // Delete donation channel
+    public function destroyChannel(Request $r, Charity $charity, \App\Models\DonationChannel $channel)
+    {
+        abort_unless($charity->owner_id === $r->user()->id, 403);
+        abort_unless($channel->charity_id === $charity->id, 404);
+        $channel->delete();
+        return response()->json(['message' => 'Channel deleted']);
+    }
+
     // Donation channels listing with visibility gating
     public function channels(Request $r, Charity $charity)
     {
@@ -240,25 +285,14 @@ class CharityController extends Controller
         // Otherwise, hide donation channels
         $user = $r->user();
 
-        if ($user) {
-            // Charity owner can always see
-            if ($charity->owner_id === $user->id) {
-                return $charity->channels()->where('is_active', true)->get();
-            }
-            // Donors can see donation channels of verified charities
-            if (method_exists($user, 'isDonor')) {
-                // if user model has helper; but ensure role via attribute
-            }
-            if (property_exists($user, 'role') ? $user->role === 'donor' : ($user->role ?? null) === 'donor') {
-                if ($charity->verification_status === 'approved') {
-                    return $charity->channels()->where('is_active', true)->get();
-                }
-            }
-        }
+        // Publicly show active channels to simplify donor experience
+        return $charity->channels()->where('is_active', true)->get();
+    }
 
-        // Unauthenticated or not a donor/owner: do not reveal channels
-        return response()->json([
-            'message' => 'Donation channels are available to logged-in donors only.'
-        ], 403);
+    // Admin-only: list all donation channels for the owner (no donor gating)
+    public function channelsAdmin(Request $r, Charity $charity)
+    {
+        abort_unless($r->user() && $charity->owner_id === $r->user()->id, 403);
+        return $charity->channels()->orderByDesc('created_at')->get();
     }
 }
