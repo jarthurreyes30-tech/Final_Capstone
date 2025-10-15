@@ -55,3 +55,30 @@ export interface PaginatedResponse<T> {
   per_page: number;
   total: number;
 }
+
+// Dashboard types
+export interface DashboardKpiStats {
+  totalDonations: number;
+  activeCampaigns: number;
+  pendingProofs: number;
+  verifiedDocuments: number;
+}
+
+export interface DashboardDonationPoint {
+  date: string; // YYYY-MM-DD
+  amount: number;
+}
+
+export interface DashboardActivityItem {
+  id: string | number;
+  type: 'donation' | 'post' | 'system';
+  description: string;
+  status?: 'confirmed' | 'pending' | 'rejected' | 'info';
+  timestamp: string; // ISO
+}
+
+export interface DashboardData {
+  stats: DashboardKpiStats;
+  donationsOverTime: DashboardDonationPoint[];
+  recentActivities: DashboardActivityItem[];
+}

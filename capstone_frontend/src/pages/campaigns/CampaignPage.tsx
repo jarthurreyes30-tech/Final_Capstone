@@ -111,14 +111,14 @@ export default function CampaignPage() {
         endDate: campaignResponse.end_date || campaignResponse.deadline_at || "",
         createdAt: campaignResponse.start_date || campaignResponse.created_at,
         charity: {
-          id: campaignResponse.charity?.id || campaignResponse.charity_id,
+          id: campaignResponse.charity?.id,
           name: campaignResponse.charity?.name || "Unknown Charity",
           logo: campaignResponse.charity?.logo_path,
         },
         story: {
-          problem: (campaignResponse as any).problem || "",
-          solution: (campaignResponse as any).solution || "",
-          outcome: (campaignResponse as any).expected_outcome || "",
+          problem: ((campaignResponse as any)?.problem ?? "").toString(),
+          solution: ((campaignResponse as any)?.solution ?? "").toString(),
+          outcome: ((campaignResponse as any)?.expected_outcome ?? "").toString(),
         },
         fundUsage: [],
         gallery: [],
@@ -350,7 +350,7 @@ export default function CampaignPage() {
               </Avatar>
               <div>
                 <p className="text-sm text-white/80">Organized by</p>
-                <p className="text-white font-semibold">{campaign.charity.name}</p>
+                <p className="text-white font-semibold">{campaign.charity.name || 'Unknown Charity'}</p>
               </div>
             </div>
           </div>
@@ -388,7 +388,7 @@ export default function CampaignPage() {
                             <span className="text-red-500">⚠️</span> The Problem
                           </h3>
                           <p className="text-muted-foreground leading-relaxed">
-                            {campaign.story.problem}
+                            {campaign.story.problem?.trim() ? campaign.story.problem : 'No problem statement provided yet.'}
                           </p>
                         </div>
 
@@ -399,7 +399,7 @@ export default function CampaignPage() {
                             <span className="text-blue-500">💡</span> The Solution
                           </h3>
                           <p className="text-muted-foreground leading-relaxed">
-                            {campaign.story.solution}
+                            {campaign.story.solution?.trim() ? campaign.story.solution : 'No solution details provided yet.'}
                           </p>
                         </div>
 
@@ -410,7 +410,7 @@ export default function CampaignPage() {
                             <span className="text-green-500">🎯</span> Expected Outcome
                           </h3>
                           <p className="text-muted-foreground leading-relaxed">
-                            {campaign.story.outcome}
+                            {campaign.story.outcome?.trim() ? campaign.story.outcome : 'No expected outcome provided yet.'}
                           </p>
                         </div>
                       </>

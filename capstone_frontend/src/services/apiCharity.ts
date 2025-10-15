@@ -5,6 +5,8 @@
  */
 import axios from 'axios';
 import { campaignService } from './campaigns';
+import { charityService } from './charity';
+import type { DashboardData, DashboardActivityItem, DashboardDonationPoint } from '@/types/charity';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -80,3 +82,60 @@ export async function createFundUsage(data: FormData): Promise<void> {
 }
 
 export { campaignService };
+
+// Build dashboard from available charityService endpoints
+export async function getDashboard(charityId: number): Promise<DashboardData> {
+  // Fetch in parallel
+  const [stats, recentDonations, recentPosts] = await Promise.all([
+    charityService.getDashboardStats(charityId).catch(() => ({} as any)),
+    charityService.getRecentDonations(charityId, 50).catch(() => []),
+    charityService.getRecentPosts(charityId, 5).catch(() => []),
+  ]);
+
+  // KPIs with safe fallbacks
+  const kpis = {
+    totalDonations: Number(stats?.total_donations ?? stats?.totalDonations ?? 0),
+    activeCampaigns: Number(stats?.active_campaigns ?? stats?.activeCampaigns ?? 0),
+    pendingProofs: Number(stats?.pending_proofs ?? stats?.pendingProofs ?? 0),
+    verifiedDocuments: Number(stats?.verified_documents ?? stats?.verifiedDocuments ?? 0),
+  };
+
+  // Donations over time: aggregate recent donations by date
+  const agg: Record<string, number> = {};
+  (Array.isArray(recentDonations) ? recentDonations : []).forEach((d: any) => {
+    const date = new Date(d.created_at || d.donated_at || d.date || Date.now())
+      .toISOString()
+      .slice(0, 10);
+    const amt = Number(d.amount ?? 0);
+    agg[date] = (agg[date] || 0) + (isNaN(amt) ? 0 : amt);
+  });
+  const donationsOverTime: DashboardDonationPoint[] = Object.entries(agg)
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([date, amount]) => ({ date, amount }));
+
+  // Recent activity: donations + posts (most recent first)
+  const donationActivities: DashboardActivityItem[] = (Array.isArray(recentDonations) ? recentDonations : []).slice(0, 10).map((d: any) => ({
+    id: d.id,
+    type: 'donation',
+    description: `Donation received: ₱${Number(d.amount || 0).toLocaleString()}`,
+    status: d.status || 'confirmed',
+    timestamp: d.created_at || d.donated_at || new Date().toISOString(),
+  }));
+  const postActivities: DashboardActivityItem[] = (Array.isArray(recentPosts) ? recentPosts : []).slice(0, 10).map((p: any) => ({
+    id: p.id,
+    type: 'post',
+    description: p.title || 'New update posted',
+    status: 'info',
+    timestamp: p.created_at || p.published_at || new Date().toISOString(),
+  }));
+
+  const recentActivities = [...donationActivities, ...postActivities]
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, 10);
+
+  return {
+    stats: kpis,
+    donationsOverTime,
+    recentActivities,
+  };
+}

@@ -15,12 +15,16 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 /**
  * Charity Dashboard Page
  * Shows KPIs, donation chart, recent activity, and quick actions
  */
 const CharityDashboardPage = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +37,11 @@ const CharityDashboardPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const dashboardData = await getDashboard();
+      const cid = Number(user?.charity?.id);
+      if (!cid) {
+        throw new Error("No charity found for your account");
+      }
+      const dashboardData = await getDashboard(cid);
       setData(dashboardData);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load dashboard";
@@ -95,7 +103,7 @@ const CharityDashboardPage = () => {
   const kpiCards = [
     {
       title: "Total Donations",
-      value: `$${data.stats.totalDonations.toLocaleString()}`,
+      value: `₱${data.stats.totalDonations.toLocaleString()}`,
       icon: TrendingUp,
       description: "All time",
     },
@@ -226,16 +234,16 @@ const CharityDashboardPage = () => {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-md">
-            <Button className="w-full" size="lg">
+            <Button className="w-full" size="lg" onClick={() => navigate('/charity/campaigns')}>
               Create New Campaign
             </Button>
-            <Button variant="outline" className="w-full" size="lg">
+            <Button variant="outline" className="w-full" size="lg" onClick={() => navigate('/charity/donations')}>
               Open Donations Inbox
             </Button>
-            <Button variant="outline" className="w-full" size="lg">
+            <Button variant="outline" className="w-full" size="lg" onClick={() => navigate('/charity/settings')}>
               Review Pending Documents
             </Button>
-            <Button variant="outline" className="w-full" size="lg">
+            <Button variant="outline" className="w-full" size="lg" onClick={() => navigate('/charity/reports')}>
               Export Reports
             </Button>
           </CardContent>

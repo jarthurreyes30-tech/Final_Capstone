@@ -19,7 +19,9 @@ class CampaignController extends Controller
         return $charity->campaigns()->where('status','published')->latest()->paginate(12);
     }
 
-    public function show(Campaign $campaign){ return $campaign; }
+    public function show(Campaign $campaign){
+        return $campaign->load('charity');
+    }
 
     public function store(Request $r, Charity $charity){
         try {
