@@ -11,8 +11,12 @@ export const AdminLayout = () => {
         <AdminSidebar />
         <div className="flex-1 flex flex-col">
           <AdminHeader />
-          <main className="flex-1 p-6 bg-muted/30">
-            <Outlet />
+          <main className="flex-1 bg-gradient-to-b from-muted/30 to-background">
+            <div className="px-6 py-6">
+              <div className="max-w-7xl mx-auto">
+                <Outlet />
+              </div>
+            </div>
           </main>
         </div>
       </div>

@@ -237,7 +237,14 @@ class AuthController extends Controller
     }
 
     public function logout(Request $r){
-        $r->user()->currentAccessToken()->delete();
+        // Log user logout
+        $user = $r->user();
+        if ($user) {
+            $this->securityService->logAuthEvent('user_logout', $user, [
+                'logout_at' => now()->toISOString(),
+            ]);
+        }
+        $user?->currentAccessToken()->delete();
         return response()->json(['message'=>'Logged out']);
     }
 

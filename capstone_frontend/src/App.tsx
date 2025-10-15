@@ -73,14 +73,13 @@ import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import Users from "./pages/admin/Users";
 import Charities from "./pages/admin/Charities";
-import AuditLogs from "./pages/admin/AuditLogs";
 import Settings from "./pages/admin/Settings";
 import Profile from "./pages/admin/Profile";
 import Reports from "./pages/admin/Reports";
-import ActionLogs from "./pages/admin/ActionLogs";
 import Categories from "./pages/admin/Categories";
 import DocumentExpiry from "./pages/admin/DocumentExpiry";
 import AdminNotifications from "./pages/admin/Notifications";
+import LoginHistory from "./pages/admin/LoginHistory";
 
 const queryClient = new QueryClient();
 
@@ -191,11 +190,10 @@ const App = () => (
               <Route path="users" element={<Users />} />
               <Route path="charities" element={<Charities />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="login-history" element={<LoginHistory />} />
               <Route path="notifications" element={<AdminNotifications />} />
-              <Route path="action-logs" element={<ActionLogs />} />
               <Route path="categories" element={<Categories />} />
               <Route path="document-expiry" element={<DocumentExpiry />} />
-              <Route path="logs" element={<AuditLogs />} />
               <Route path="settings" element={<Settings />} />
               <Route path="profile" element={<Profile />} />
             </Route>

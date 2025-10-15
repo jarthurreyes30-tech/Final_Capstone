@@ -327,6 +327,12 @@ export default function CharityDashboard() {
           <p className="text-lg text-white/90 max-w-3xl">
             {charityData?.mission || 'Empowering communities through sustainable programs and transparent fundraising.'}
           </p>
+          <a
+            href="/charity/reports"
+            className="mt-2 inline-block text-white/80 hover:text-white underline underline-offset-4"
+          >
+            Overview of your charity platform
+          </a>
         </div>
       </div>
 

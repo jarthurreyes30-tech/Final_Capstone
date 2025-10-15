@@ -182,10 +182,7 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function(){
   Route::patch('/admin/reports/{report}/review', [ReportController::class,'review']);
   Route::delete('/admin/reports/{report}', [ReportController::class,'destroy']);
   
-  // Admin Action Logs
-  Route::get('/admin/action-logs', [AdminActionLogController::class,'index']);
-  Route::get('/admin/action-logs/statistics', [AdminActionLogController::class,'statistics']);
-  Route::get('/admin/action-logs/export', [AdminActionLogController::class,'export']);
+  // Admin Action Logs removed
   
   // Category Management
   Route::get('/admin/categories', [CategoryController::class,'adminIndex']);

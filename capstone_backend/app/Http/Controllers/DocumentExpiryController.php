@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CharityDocument;
 use App\Models\Charity;
+use App\Models\AdminActionLog;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -126,11 +127,29 @@ class DocumentExpiryController extends Controller
             'expiry_date' => 'nullable|date|after:today',
         ]);
 
+        $admin = $request->user();
+        $oldData = $document->only(['expires','expiry_date','renewal_reminder_sent_at']);
+
         $document->update([
             'expires' => $request->expires,
             'expiry_date' => $request->expires ? $request->expiry_date : null,
             'renewal_reminder_sent_at' => null, // Reset reminder
         ]);
+
+        // Log admin action
+        if ($admin) {
+            AdminActionLog::logAction(
+                $admin->id,
+                'update_document_expiry',
+                'CharityDocument',
+                $document->id,
+                [
+                    'charity_id' => $document->charity_id ?? null,
+                    'old' => $oldData,
+                    'new' => $document->only(['expires','expiry_date','renewal_reminder_sent_at']),
+                ]
+            );
+        }
 
         return response()->json([
             'message' => 'Document expiry information updated successfully',

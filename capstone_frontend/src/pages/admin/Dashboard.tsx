@@ -8,15 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 
-// Mock data - will be replaced with API calls
-const mockChartData = [
-  { month: "Jan", registrations: 12 },
-  { month: "Feb", registrations: 19 },
-  { month: "Mar", registrations: 15 },
-  { month: "Apr", registrations: 25 },
-  { month: "May", registrations: 22 },
-  { month: "Jun", registrations: 30 },
-];
+// Month labels helper
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 
 interface DashboardMetrics {
   total_users: number;
@@ -54,6 +47,7 @@ export default function Dashboard() {
   const [pendingCharities, setPendingCharities] = useState<Charity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [donationsTrend, setDonationsTrend] = useState<Array<{ month: string; amount: number }>>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -102,6 +96,21 @@ export default function Dashboard() {
         const pending = charitiesArray.filter((c: Charity) => c.verification_status === 'pending');
         setPendingCharities(pending.slice(0, 5)); // Show latest 5 pending
       }
+
+      // Fetch donations trend (public endpoint)
+      const statsResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/leaderboard/stats`);
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        const trends = Array.isArray(statsData?.monthly_trends) ? statsData.monthly_trends : [];
+        // trends items: { year, month, total_amount, donation_count }
+        const formatted = trends
+          .slice()
+          .sort((a: any, b: any) => a.year === b.year ? a.month - b.month : a.year - b.year)
+          .map((t: any) => ({ month: MONTHS[(t.month - 1) % 12], amount: Number(t.total_amount) || 0 }));
+        setDonationsTrend(formatted);
+      } else {
+        setDonationsTrend([]);
+      }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
       toast.error('Failed to load dashboard data');
@@ -109,6 +118,7 @@ export default function Dashboard() {
       setMetrics(null);
       setRecentUsers([]);
       setPendingCharities([]);
+      setDonationsTrend([]);
     } finally {
       setIsLoading(false);
     }
@@ -169,9 +179,9 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
+          <a href="/admin/reports" className="text-muted-foreground mt-2 inline-block hover:text-primary transition-colors">
             Overview of your charity platform
-          </p>
+          </a>
         </div>
         <Button onClick={fetchDashboardData} variant="outline" size="sm">
           <RefreshCw className="mr-2 h-4 w-4" />
@@ -185,30 +195,35 @@ export default function Dashboard() {
           value={metrics?.total_users?.toString() || '0'}
           icon={Users}
           description="All registered users"
+          to="/admin/users"
         />
         <KPICard
           title="Total Donors"
           value={metrics?.total_donors?.toString() || '0'}
           icon={DollarSign}
           description="Registered donors"
+          to="/admin/users"
         />
         <KPICard
           title="Charity Admins"
           value={metrics?.total_charity_admins?.toString() || '0'}
           icon={Building2}
           description="Charity representatives"
+          to="/admin/users"
         />
         <KPICard
           title="Approved Charities"
           value={metrics?.charities?.toString() || '0'}
           icon={CheckCircle}
           description="Verified organizations"
+          to="/admin/charities"
         />
         <KPICard
           title="Pending Verifications"
           value={metrics?.pending_verifications?.toString() || '0'}
           icon={Activity}
           description="Awaiting review"
+          to="/admin/charities"
         />
       </div>
 
@@ -332,11 +347,11 @@ export default function Dashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Charity Registrations Trend</CardTitle>
+          <CardTitle>Donations Received</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={mockChartData}>
+            <LineChart data={donationsTrend}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis 
                 dataKey="month" 
@@ -356,7 +371,7 @@ export default function Dashboard() {
               />
               <Line 
                 type="monotone" 
-                dataKey="registrations" 
+                dataKey="amount" 
                 stroke="hsl(var(--primary))" 
                 strokeWidth={2}
                 dot={{ fill: "hsl(var(--primary))", r: 4 }}

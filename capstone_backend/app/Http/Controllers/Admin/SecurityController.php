@@ -25,6 +25,13 @@ class SecurityController extends Controller
             $query->where('user_id', $userId);
         }
 
+        // Filter by user role (e.g., donor, charity_admin)
+        if ($role = $request->query('role')) {
+            $query->where('user_role', $role);
+        } elseif ($role = $request->query('user_role')) {
+            $query->where('user_role', $role);
+        }
+
         // Filter by action
         if ($action = $request->query('action')) {
             $query->where('action', $action);
