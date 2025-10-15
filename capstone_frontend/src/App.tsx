@@ -40,7 +40,10 @@ import MakeDonation from "./pages/donor/MakeDonation";
 import DonationHistory from "./pages/donor/DonationHistory";
 import FundTransparency from "./pages/donor/FundTransparency";
 import DonorProfile from "./pages/donor/DonorProfile";
-import About from "./pages/donor/About";
+import DonorProfilePage from "./pages/donor/Profile";
+import EditProfile from "./pages/donor/EditProfile";
+import AccountSettings from "./pages/donor/AccountSettings";
+import HelpCenter from "./pages/donor/HelpCenter";
 import BrowseCharities from "./pages/donor/BrowseCharities";
 import Notifications from "./pages/donor/Notifications";
 import DonorCharityProfile from "./pages/donor/CharityProfile";
@@ -131,12 +134,14 @@ const App = () => (
               <Route path="donate/:charityId" element={<MakeDonation />} />
               <Route path="history" element={<DonationHistory />} />
               <Route path="transparency" element={<FundTransparency />} />
-              <Route path="profile" element={<DonorProfile />} />
+              <Route path="profile" element={<DonorProfilePage />} />
+              <Route path="edit-profile" element={<EditProfile />} />
+              <Route path="settings" element={<AccountSettings />} />
               <Route path="charities" element={<BrowseCharities />} />
               <Route path="charities/:id" element={<DonorCharityProfile />} />
               <Route path="reports" element={<DonorReports />} />
               <Route path="leaderboard" element={<Leaderboard />} />
-              <Route path="about" element={<About />} />
+              <Route path="help" element={<HelpCenter />} />
               <Route path="notifications" element={<Notifications />} />
             </Route>
 
