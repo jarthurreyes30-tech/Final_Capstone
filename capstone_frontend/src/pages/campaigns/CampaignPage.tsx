@@ -113,9 +113,9 @@ export default function CampaignPage() {
           logo: campaignResponse.charity?.logo_path,
         },
         story: {
-          problem: "",
-          solution: "",
-          outcome: "",
+          problem: (campaignResponse as any).problem || "",
+          solution: (campaignResponse as any).solution || "",
+          outcome: (campaignResponse as any).expected_outcome || "",
         },
         fundUsage: [],
         gallery: [],

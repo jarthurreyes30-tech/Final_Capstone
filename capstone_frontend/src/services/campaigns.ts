@@ -17,6 +17,9 @@ export interface Campaign {
   charity_id: number;
   title: string;
   description?: string;
+  problem?: string;
+  solution?: string;
+  expected_outcome?: string;
   target_amount?: number;
   current_amount?: number;
   deadline_at?: string;
@@ -25,6 +28,7 @@ export interface Campaign {
   donation_type: 'one_time' | 'recurring';
   start_date?: string;
   end_date?: string;
+  donation_channel_id?: number | null;
   created_at: string;
   updated_at: string;
   charity?: {
@@ -37,13 +41,26 @@ export interface Campaign {
 export interface CampaignFormData {
   title: string;
   description?: string;
+  problem?: string;
+  solution?: string;
+  expected_outcome?: string;
   target_amount?: number;
   deadline_at?: string;
   status?: 'draft' | 'published' | 'closed' | 'archived';
   donation_type: 'one_time' | 'recurring';
   start_date?: string;
   end_date?: string;
+  donation_channel_id?: number | null;
   cover_image?: File;
+}
+
+export interface DonationChannel {
+  id: number;
+  charity_id: number;
+  type: 'gcash' | 'paymaya' | 'paypal' | 'bank' | 'other';
+  label: string;
+  details: Record<string, any>;
+  is_active: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -95,6 +112,14 @@ class CampaignService {
   }
 
   /**
+   * Get active donation channels for a charity (owner/donor access)
+   */
+  async getDonationChannels(charityId: number): Promise<DonationChannel[]> {
+    const response = await this.apiClient.get<DonationChannel[]>(`/api/charities/${charityId}/channels`);
+    return response.data as any;
+  }
+
+  /**
    * Get a single campaign by ID
    */
   async getCampaign(campaignId: number): Promise<Campaign> {
@@ -110,12 +135,18 @@ class CampaignService {
     
     formData.append('title', data.title);
     if (data.description) formData.append('description', data.description);
+    if (data.problem) formData.append('problem', data.problem);
+    if (data.solution) formData.append('solution', data.solution);
+    if (data.expected_outcome) formData.append('expected_outcome', data.expected_outcome);
     if (data.target_amount) formData.append('target_amount', data.target_amount.toString());
     if (data.deadline_at) formData.append('deadline_at', data.deadline_at);
     if (data.status) formData.append('status', data.status);
     formData.append('donation_type', data.donation_type);
     if (data.start_date) formData.append('start_date', data.start_date);
     if (data.end_date) formData.append('end_date', data.end_date);
+    if (data.donation_channel_id !== undefined && data.donation_channel_id !== null) {
+      formData.append('donation_channel_id', String(data.donation_channel_id));
+    }
     if (data.cover_image) formData.append('cover_image', data.cover_image);
 
     const response = await this.apiClient.post<{ message: string; campaign: Campaign }>(
@@ -139,12 +170,18 @@ class CampaignService {
     
     if (data.title) formData.append('title', data.title);
     if (data.description !== undefined) formData.append('description', data.description);
+    if (data.problem !== undefined) formData.append('problem', data.problem);
+    if (data.solution !== undefined) formData.append('solution', data.solution);
+    if (data.expected_outcome !== undefined) formData.append('expected_outcome', data.expected_outcome);
     if (data.target_amount !== undefined) formData.append('target_amount', data.target_amount.toString());
     if (data.deadline_at !== undefined) formData.append('deadline_at', data.deadline_at);
     if (data.status) formData.append('status', data.status);
     if (data.donation_type) formData.append('donation_type', data.donation_type);
     if (data.start_date !== undefined) formData.append('start_date', data.start_date);
     if (data.end_date !== undefined) formData.append('end_date', data.end_date);
+    if (data.donation_channel_id !== undefined && data.donation_channel_id !== null) {
+      formData.append('donation_channel_id', String(data.donation_channel_id));
+    }
     if (data.cover_image) formData.append('cover_image', data.cover_image);
 
     // Laravel requires _method for file uploads with PUT/PATCH

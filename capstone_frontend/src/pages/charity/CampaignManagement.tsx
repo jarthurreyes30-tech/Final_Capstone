@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-import { campaignService, Campaign as ApiCampaign } from "@/services/campaigns";
+import { campaignService, Campaign as ApiCampaign, DonationChannel } from "@/services/campaigns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CampaignCard, Campaign as CampaignCardType } from "@/components/charity/CampaignCard";
 import { CampaignCardSkeleton } from "@/components/charity/CampaignCardSkeleton";
@@ -45,16 +45,23 @@ export default function CampaignManagement() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    problem: "",
+    solution: "",
+    expectedOutcome: "",
     targetAmount: "",
     startDate: "",
     endDate: "",
     donationType: "one_time" as "one_time" | "recurring",
     status: "draft" as "draft" | "published" | "closed" | "archived",
+    donationChannelId: "" as string | number | "",
     image: null as File | null
   });
 
+  const [channels, setChannels] = useState<DonationChannel[]>([]);
+
   useEffect(() => {
     loadCampaigns();
+    loadChannels();
   }, []);
 
   const loadCampaigns = async () => {
@@ -88,6 +95,17 @@ export default function CampaignManagement() {
     }
   };
 
+  const loadChannels = async () => {
+    try {
+      if (!user?.charity?.id) return;
+      const data = await campaignService.getDonationChannels(user.charity.id);
+      setChannels(Array.isArray(data) ? data : []);
+    } catch (e) {
+      // ignore silently if forbidden for unauthenticated
+      setChannels([]);
+    }
+  };
+
   const handleCreate = async () => {
     try {
       if (!user?.charity?.id) {
@@ -105,11 +123,15 @@ export default function CampaignManagement() {
       const data = {
         title: formData.title,
         description: formData.description,
+        problem: formData.problem,
+        solution: formData.solution,
+        expected_outcome: formData.expectedOutcome,
         target_amount: parseFloat(formData.targetAmount),
         start_date: formData.startDate,
         end_date: formData.endDate,
         donation_type: formData.donationType,
         status: formData.status,
+        donation_channel_id: formData.donationChannelId ? Number(formData.donationChannelId) : undefined,
         cover_image: formData.image || undefined
       };
 
@@ -137,11 +159,15 @@ export default function CampaignManagement() {
     setFormData({
       title: campaign.title,
       description: campaign.description,
+      problem: (campaign as any).problem || "",
+      solution: (campaign as any).solution || "",
+      expectedOutcome: (campaign as any).expected_outcome || "",
       targetAmount: campaign.target_amount.toString(),
       startDate: formatDateForInput(campaign.start_date),
       endDate: formatDateForInput(campaign.end_date),
       donationType: campaign.donation_type,
       status: campaign.status,
+      donationChannelId: (campaign as any).donation_channel_id || "",
       image: null
     });
     setIsEditDialogOpen(true);
@@ -204,11 +230,15 @@ export default function CampaignManagement() {
     setFormData({
       title: "",
       description: "",
+      problem: "",
+      solution: "",
+      expectedOutcome: "",
       targetAmount: "",
       startDate: "",
       endDate: "",
       donationType: "one_time",
       status: "draft" as "draft" | "published" | "closed" | "archived",
+      donationChannelId: "",
       image: null
     });
     setSelectedCampaign(null);
@@ -522,6 +552,36 @@ export default function CampaignManagement() {
                 rows={3}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="problem">⚠️ The Problem</Label>
+              <Textarea
+                id="problem"
+                value={formData.problem}
+                onChange={(e) => setFormData({ ...formData, problem: e.target.value })}
+                placeholder="What issue are you addressing?"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="solution">💡 The Solution</Label>
+              <Textarea
+                id="solution"
+                value={formData.solution}
+                onChange={(e) => setFormData({ ...formData, solution: e.target.value })}
+                placeholder="How will you solve the problem?"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="expectedOutcome">🎯 Expected Outcome</Label>
+              <Textarea
+                id="expectedOutcome"
+                value={formData.expectedOutcome}
+                onChange={(e) => setFormData({ ...formData, expectedOutcome: e.target.value })}
+                placeholder="What impact do you expect?"
+                rows={3}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="donationType">Donation Type *</Label>
@@ -539,17 +599,20 @@ export default function CampaignManagement() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="status">Status *</Label>
+                <Label htmlFor="donationChannel">Donation Channel</Label>
                 <Select
-                  value={formData.status}
-                  onValueChange={(value: "draft" | "published" | "closed" | "archived") => setFormData({ ...formData, status: value })}
+                  value={String(formData.donationChannelId)}
+                  onValueChange={(value: string) => setFormData({ ...formData, donationChannelId: value })}
                 >
-                  <SelectTrigger id="status">
-                    <SelectValue placeholder="Select status" />
+                  <SelectTrigger id="donationChannel">
+                    <SelectValue placeholder="Select a channel (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
+                    {channels.map((ch) => (
+                      <SelectItem key={ch.id} value={String(ch.id)}>
+                        {ch.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -628,6 +691,33 @@ export default function CampaignManagement() {
                 rows={3}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-problem">⚠️ The Problem</Label>
+              <Textarea
+                id="edit-problem"
+                value={formData.problem}
+                onChange={(e) => setFormData({ ...formData, problem: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-solution">💡 The Solution</Label>
+              <Textarea
+                id="edit-solution"
+                value={formData.solution}
+                onChange={(e) => setFormData({ ...formData, solution: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-expectedOutcome">🎯 Expected Outcome</Label>
+              <Textarea
+                id="edit-expectedOutcome"
+                value={formData.expectedOutcome}
+                onChange={(e) => setFormData({ ...formData, expectedOutcome: e.target.value })}
+                rows={3}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-donationType">Donation Type *</Label>
@@ -658,6 +748,24 @@ export default function CampaignManagement() {
                     <SelectItem value="published">Published</SelectItem>
                     <SelectItem value="closed">Closed</SelectItem>
                     <SelectItem value="archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-donationChannel">Donation Channel</Label>
+                <Select
+                  value={String(formData.donationChannelId)}
+                  onValueChange={(value: string) => setFormData({ ...formData, donationChannelId: value })}
+                >
+                  <SelectTrigger id="edit-donationChannel">
+                    <SelectValue placeholder="Select a channel (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {channels.map((ch) => (
+                      <SelectItem key={ch.id} value={String(ch.id)}>
+                        {ch.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -722,6 +830,28 @@ export default function CampaignManagement() {
               <div>
                 <Label>Description</Label>
                 <p className="text-sm text-muted-foreground mt-1">{selectedCampaign.description}</p>
+              </div>
+              <div>
+                <Label>⚠️ The Problem</Label>
+                <p className="text-sm text-muted-foreground mt-1">{(selectedCampaign as any).problem || '—'}</p>
+              </div>
+              <div>
+                <Label>💡 The Solution</Label>
+                <p className="text-sm text-muted-foreground mt-1">{(selectedCampaign as any).solution || '—'}</p>
+              </div>
+              <div>
+                <Label>🎯 Expected Outcome</Label>
+                <p className="text-sm text-muted-foreground mt-1">{(selectedCampaign as any).expected_outcome || '—'}</p>
+              </div>
+              <div>
+                <Label>Donation Channel</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {(() => {
+                    const id = (selectedCampaign as any).donation_channel_id;
+                    const ch = channels.find(c => c.id === id);
+                    return ch ? ch.label : '—';
+                  })()}
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

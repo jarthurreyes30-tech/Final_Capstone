@@ -27,12 +27,16 @@ class CampaignController extends Controller
             $data = $r->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
+                'problem' => 'nullable|string',
+                'solution' => 'nullable|string',
+                'expected_outcome' => 'nullable|string',
                 'target_amount' => 'nullable|numeric|min:0',
                 'deadline_at' => 'nullable|date|after:today',
                 'status' => 'in:draft,published,closed,archived',
                 'donation_type' => 'required|in:one_time,recurring',
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date|after_or_equal:start_date',
+                'donation_channel_id' => 'nullable|exists:donation_channels,id',
                 'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
             ]);
 
@@ -79,12 +83,16 @@ class CampaignController extends Controller
         $data = $r->validate([
             'title' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
+            'problem' => 'nullable|string',
+            'solution' => 'nullable|string',
+            'expected_outcome' => 'nullable|string',
             'target_amount' => 'nullable|numeric|min:0',
             'deadline_at' => 'nullable|date',
             'status' => 'sometimes|in:draft,published,closed,archived',
             'donation_type' => 'sometimes|in:one_time,recurring',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'donation_channel_id' => 'nullable|exists:donation_channels,id',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 

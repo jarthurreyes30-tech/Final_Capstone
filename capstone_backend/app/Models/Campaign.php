@@ -10,6 +10,9 @@ class Campaign extends Model
         'charity_id',
         'title',
         'description',
+        'problem',
+        'solution',
+        'expected_outcome',
         'target_amount',
         'deadline_at',
         'cover_image_path',
@@ -17,6 +20,7 @@ class Campaign extends Model
         'donation_type',
         'start_date',
         'end_date',
+        'donation_channel_id',
     ];
 
     protected $casts = [
@@ -37,6 +41,11 @@ class Campaign extends Model
     public function donations()
     {
         return $this->hasMany(Donation::class);
+    }
+
+    public function donationChannel()
+    {
+        return $this->belongsTo(DonationChannel::class);
     }
 
     // Accessors
