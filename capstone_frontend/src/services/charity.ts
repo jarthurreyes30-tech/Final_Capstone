@@ -29,9 +29,44 @@ class CharityService {
     });
   }
 
+  // Get all donation channels for a charity
+  async getDonationChannels(charityId: number) {
+    const res = await this.api.get(`/api/charities/${charityId}/channels`);
+    return res.data;
+  }
+
   // Get donation channel
   async getDonationChannel(channelId: number) {
     const res = await this.api.get(`/channels/${channelId}`);
+    return res.data;
+  }
+
+  // Create new donation channel
+  async createDonationChannel(
+    charityId: number,
+    payload: {
+      type: 'gcash' | 'paymaya' | 'paypal' | 'bank' | 'other';
+      label: string;
+      details: Record<string, any>;
+      qr_image?: File | null;
+    }
+  ) {
+    const fd = new FormData();
+    
+    fd.append('type', payload.type);
+    fd.append('label', payload.label);
+    
+    if (payload.details) {
+      Object.entries(payload.details).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) fd.append(`details[${k}]`, String(v));
+      });
+    }
+    
+    if (payload.qr_image) fd.append('qr_image', payload.qr_image);
+    
+    const res = await this.api.post(`/api/charities/${charityId}/channels`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return res.data;
   }
 

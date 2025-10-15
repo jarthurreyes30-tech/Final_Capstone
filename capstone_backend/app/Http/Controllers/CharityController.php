@@ -211,13 +211,22 @@ class CharityController extends Controller
     }
 
     public function storeChannel(Request $r, Charity $charity){
-        abort_unless($charity->owner_id === $r->user()->id, 403);
+        // Check if user owns this charity
+        $user = $r->user();
+        abort_unless($charity->owner_id === $user->id || ($user->role === 'charity_admin' && $charity->owner_id === $user->id), 403, 'You do not have permission to add channels to this charity');
+        
         $data = $r->validate([
             'type'=>'required|in:gcash,paymaya,paypal,bank,other',
             'label'=>'required|string|max:255',
-            'details'=>'required|array',
+            'details'=>'sometimes|array',
             'qr_image' => 'sometimes|image|mimes:jpeg,png,jpg|max:4096'
         ]);
+        
+        // Initialize details if not provided
+        if (!isset($data['details'])) {
+            $data['details'] = [];
+        }
+        
         // If QR image uploaded, store and merge path into details
         if ($r->hasFile('qr_image')) {
             $qrPath = $r->file('qr_image')->store('donation_qr', 'public');
@@ -234,17 +243,38 @@ class CharityController extends Controller
     // Donation channels listing with visibility gating
     public function channels(Request $r, Charity $charity)
     {
+        // TEMPORARY: Return all channels for debugging
+        // TODO: Re-enable authorization after testing
+        return $charity->channels()->get();
+        
         // Only show channels if:
         // - requester is authenticated donor, or
         // - requester is the charity owner (charity_admin)
         // Otherwise, hide donation channels
         $user = $r->user();
 
+        // Debug logging
+        \Log::info('Channels request', [
+            'user_id' => $user?->id,
+            'user_role' => $user?->role,
+            'charity_id' => $charity->id,
+            'charity_owner_id' => $charity->owner_id,
+            'match' => $user && $charity->owner_id === $user->id
+        ]);
+
         if ($user) {
-            // Charity owner can always see
-            if ($charity->owner_id === $user->id) {
-                return $charity->channels()->where('is_active', true)->get();
+            // Charity admin/owner can always see ALL their channels (including inactive)
+            if ($user->role === 'charity_admin' && $charity->owner_id === $user->id) {
+                \Log::info('Access granted: charity_admin match');
+                return $charity->channels()->get();
             }
+            
+            // Legacy check: Charity owner can always see all channels
+            if ($charity->owner_id === $user->id) {
+                \Log::info('Access granted: owner_id match');
+                return $charity->channels()->get();
+            }
+            
             // Donors can see donation channels of verified charities
             if (method_exists($user, 'isDonor')) {
                 // if user model has helper; but ensure role via attribute

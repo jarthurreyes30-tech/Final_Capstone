@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Heart, Moon, Sun, User, LogOut, Bell, Building2, FileText, Users, TrendingUp, Settings } from "lucide-react";
+import { Heart, Moon, Sun, User, LogOut, Bell, Building2, FileText, Users, TrendingUp, Settings, ChevronDown, BarChart3, Upload, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -101,53 +101,23 @@ export const CharityNavbar = () => {
             >
               Donations
             </NavLink>
-            <NavLink
-              to="/charity/fund-tracking"
-              className={({ isActive }) =>
-                `text-sm font-medium transition-colors hover:text-primary ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`
-              }
-            >
-              Fund Tracking
-            </NavLink>
-            <NavLink
-              to="/charity/volunteers"
-              className={({ isActive }) =>
-                `text-sm font-medium transition-colors hover:text-primary ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`
-              }
-            >
-              Volunteers
-            </NavLink>
             
-            {/* More Dropdown for additional items */}
+            {/* Reports & Compliance Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="text-sm font-medium transition-colors hover:text-primary text-muted-foreground flex items-center gap-1">
-                  More
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  Reports & Compliance
+                  <ChevronDown className="h-4 w-4" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => navigate('/charity/documents')} className="cursor-pointer">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Documents
-                </DropdownMenuItem>
+              <DropdownMenuContent align="start" className="w-56">
                 <DropdownMenuItem onClick={() => navigate('/charity/reports')} className="cursor-pointer">
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Reports
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  Reports & Analytics
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/charity/organization')} className="cursor-pointer">
-                  <Building2 className="mr-2 h-4 w-4" />
-                  Organization Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/charity/settings')} className="cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                <DropdownMenuItem onClick={() => navigate('/charity/documents')} className="cursor-pointer">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Document Uploads / Audits
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -205,13 +175,13 @@ export const CharityNavbar = () => {
                   <Building2 className="mr-2 h-4 w-4" />
                   Organization Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/charity/profile')} className="cursor-pointer">
-                  <User className="mr-2 h-4 w-4" />
-                  My Profile
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/charity/settings')} className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/charity/help-center')} className="cursor-pointer">
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  Help Center
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">

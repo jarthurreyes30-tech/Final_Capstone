@@ -54,16 +54,19 @@ import Leaderboard from "./pages/donor/Leaderboard";
 import { CharityLayout } from "./components/charity/CharityLayout";
 import CharityDashboard from "./pages/charity/CharityDashboard";
 import OrganizationProfile from "./pages/charity/OrganizationProfile";
+import OrganizationProfileManagement from "./pages/charity/OrganizationProfileManagement";
 import CampaignManagement from "./pages/charity/CampaignManagement";
 import DonationManagement from "./pages/charity/DonationManagement";
 import FundTracking from "./pages/charity/FundTracking";
 import CharityUpdates from "./pages/charity/CharityUpdates";
-import CharitySettings from "./pages/charity/CharitySettings";
+import CharitySettings from "./pages/charity/Settings";
+import CharityHelpCenter from "./pages/charity/HelpCenter";
 import CharityVolunteers from "./pages/charity/Volunteers";
 import CharityDocuments from "./pages/charity/Documents";
+import DocumentUploads from "./pages/charity/DocumentUploads";
 import CharityNotifications from "./pages/charity/Notifications";
 import CharityReports from "./pages/charity/Reports";
-import CharityAdminProfile from "./pages/charity/CharityProfile";
+import ReportsAnalytics from "./pages/charity/ReportsAnalytics";
 
 // --- 1. IMPORT THE NEW ADMIN COMPONENTS ---
 import { AdminLayout } from "./components/admin/AdminLayout";
@@ -158,16 +161,19 @@ const App = () => (
             >
               <Route index element={<CharityDashboard />} />
               <Route path="organization" element={<OrganizationProfile />} />
+              <Route path="organization/manage" element={<OrganizationProfileManagement />} />
               <Route path="updates" element={<CharityUpdates />} />
               <Route path="campaigns" element={<CampaignManagement />} />
               <Route path="donations" element={<DonationManagement />} />
               <Route path="fund-tracking" element={<FundTracking />} />
               <Route path="volunteers" element={<CharityVolunteers />} />
-              <Route path="documents" element={<CharityDocuments />} />
-              <Route path="reports" element={<CharityReports />} />
+              <Route path="documents" element={<DocumentUploads />} />
+              <Route path="documents/expiry" element={<CharityDocuments />} />
+              <Route path="reports" element={<ReportsAnalytics />} />
+              <Route path="reports/issues" element={<CharityReports />} />
               <Route path="notifications" element={<CharityNotifications />} />
-              <Route path="profile" element={<CharityAdminProfile />} />
               <Route path="settings" element={<CharitySettings />} />
+              <Route path="help-center" element={<CharityHelpCenter />} />
             </Route>
 
             {/* --- 2. SETUP THE NEW ADMIN DASHBOARD LAYOUT AND ROUTES --- */}
