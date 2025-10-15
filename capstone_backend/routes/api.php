@@ -37,7 +37,7 @@ Route::get('/posts', [CharityPostController::class,'index']);
 Route::get('/charities/{charity}/posts', [CharityPostController::class,'getCharityPosts']);
 
 // Public updates (for donor viewing)
-Route::get('/charities/{charity}/updates', [\App\Http\Controllers\UpdateController::class,'index']);
+Route::get('/charities/{charity}/updates', [\App\Http\Controllers\UpdateController::class,'getCharityUpdates']);
 
 // Public categories and campaign comments
 Route::get('/categories', [CategoryController::class,'index']);
@@ -98,6 +98,12 @@ Route::middleware(['auth:sanctum'])->group(function(){
   Route::post('/notifications/mark-all-read', [NotificationController::class,'markAllAsRead']);
   Route::get('/notifications/unread-count', [NotificationController::class,'unreadCount']);
   Route::delete('/notifications/{notification}', [NotificationController::class,'destroy']);
+  
+  // Update interactions (available to any authenticated user)
+  Route::post('/updates/{id}/like', [\App\Http\Controllers\UpdateController::class,'toggleLike']);
+  Route::get('/updates/{id}/comments', [\App\Http\Controllers\UpdateController::class,'getComments']);
+  Route::post('/updates/{id}/comments', [\App\Http\Controllers\UpdateController::class,'addComment']);
+  Route::delete('/comments/{id}', [\App\Http\Controllers\UpdateController::class,'deleteComment']);
 });
 
 // System admin (for recurring donations processing and security)
@@ -152,10 +158,6 @@ Route::middleware(['auth:sanctum','role:charity_admin'])->group(function(){
   Route::put('/updates/{id}', [\App\Http\Controllers\UpdateController::class,'update']);
   Route::delete('/updates/{id}', [\App\Http\Controllers\UpdateController::class,'destroy']);
   Route::post('/updates/{id}/pin', [\App\Http\Controllers\UpdateController::class,'togglePin']);
-  Route::post('/updates/{id}/like', [\App\Http\Controllers\UpdateController::class,'toggleLike']);
-  Route::get('/updates/{id}/comments', [\App\Http\Controllers\UpdateController::class,'getComments']);
-  Route::post('/updates/{id}/comments', [\App\Http\Controllers\UpdateController::class,'addComment']);
-  Route::delete('/comments/{id}', [\App\Http\Controllers\UpdateController::class,'deleteComment']);
   Route::patch('/comments/{id}/hide', [\App\Http\Controllers\UpdateController::class,'hideComment']);
 });
 

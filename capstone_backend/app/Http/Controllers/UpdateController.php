@@ -12,23 +12,18 @@ use Illuminate\Support\Facades\Log;
 class UpdateController extends Controller
 {
     /**
-     * Get all updates for a charity
+     * Get all updates for the authenticated charity
      */
     public function index(Request $request)
     {
         try {
             $user = auth()->user();
             
-            // If charity_id is provided in query, use it (for public view)
-            // Otherwise, use authenticated charity's ID
-            if ($request->has('charity_id')) {
-                $charityId = $request->charity_id;
-            } else {
-                if ($user->role !== 'charity_admin' || !$user->charity) {
-                    return response()->json(['error' => 'Unauthorized'], 403);
-                }
-                $charityId = $user->charity->id;
+            if (!$user || $user->role !== 'charity_admin' || !$user->charity) {
+                return response()->json(['error' => 'Unauthorized'], 403);
             }
+
+            $charityId = $user->charity->id;
 
             $updates = Update::where('charity_id', $charityId)
                 ->with(['charity'])
@@ -37,21 +32,48 @@ class UpdateController extends Controller
                 ->get();
 
             // Add is_liked flag for authenticated users
-            if ($user) {
-                $updates->each(function ($update) use ($user) {
-                    $update->is_liked = $update->isLikedBy($user->id);
-                    if ($update->children) {
-                        $update->children->each(function ($child) use ($user) {
-                            $child->is_liked = $child->isLikedBy($user->id);
-                        });
-                    }
-                });
-            }
+            $updates->each(function ($update) use ($user) {
+                $update->is_liked = $update->isLikedBy($user->id);
+                if ($update->children) {
+                    $update->children->each(function ($child) use ($user) {
+                        $child->is_liked = $child->isLikedBy($user->id);
+                    });
+                }
+            });
 
             return response()->json(['data' => $updates]);
         } catch (\Exception $e) {
             Log::error('Failed to fetch updates: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to fetch updates'], 500);
+            return response()->json(['error' => 'Failed to fetch updates', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get all updates for a specific charity (public endpoint)
+     */
+    public function getCharityUpdates($charityId)
+    {
+        try {
+            $updates = Update::where('charity_id', $charityId)
+                ->whereNull('parent_id') // Only get root updates, not threaded replies
+                ->with(['charity'])
+                ->orderBy('is_pinned', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Add is_liked flag for authenticated users
+            $user = auth()->user();
+            if ($user) {
+                $updates->each(function ($update) use ($user) {
+                    $update->is_liked = $update->isLikedBy($user->id);
+                });
+            }
+
+            return response()->json(['data' => $updates], 200);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch charity updates: ' . $e->getMessage());
+            // Return empty array instead of 500 error
+            return response()->json(['data' => []], 200);
         }
     }
 

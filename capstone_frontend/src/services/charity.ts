@@ -108,6 +108,36 @@ class CharityService {
     });
     return res.data;
   }
+
+  // Get public charity profile
+  async getPublicCharityProfile(charityId: number) {
+    const res = await this.api.get(`/api/charities/${charityId}`);
+    return res.data;
+  }
+
+  // Get charity campaigns (public)
+  async getCharityCampaigns(charityId: number, params?: { status?: string; page?: number }) {
+    const res = await this.api.get(`/api/charities/${charityId}/campaigns`, { params });
+    return res.data;
+  }
+
+  // Follow/unfollow charity
+  async toggleFollow(charityId: number) {
+    const res = await this.api.post(`/api/charities/${charityId}/follow`);
+    return res.data;
+  }
+
+  // Check if user follows charity
+  async checkFollowStatus(charityId: number) {
+    const res = await this.api.get(`/api/charities/${charityId}/follow-status`);
+    return res.data;
+  }
+
+  // Get charity stats (public)
+  async getCharityStats(charityId: number) {
+    const res = await this.api.get(`/api/charities/${charityId}/stats`);
+    return res.data;
+  }
 }
 
 // Export a single instance

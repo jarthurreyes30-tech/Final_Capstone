@@ -760,7 +760,7 @@ export default function CharityUpdates() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Left Panel - Charity Identity (Sticky) */}
+       {/* Left Panel - Charity Identity (Sticky) */}
       <aside 
         className="hidden lg:block w-[320px] fixed left-0 top-16 bottom-0 bg-[#f8f9fb] dark:bg-[#0e1a32] border-r border-border/40 overflow-y-auto"
         style={{

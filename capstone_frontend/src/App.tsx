@@ -12,6 +12,7 @@ import { ThemeProvider } from "./components/ThemeProvider";
 import Index from "./pages/Index";
 import PublicCharities from "./pages/PublicCharities";
 import CharityDetail from "./pages/CharityDetail";
+import CharityPublicProfile from "./pages/CharityPublicProfile";
 import PublicAbout from "./pages/PublicAbout";
 import NotFound from "./pages/NotFound";
 import CampaignPage from "./pages/campaigns/CampaignPage";
@@ -42,7 +43,7 @@ import DonorProfile from "./pages/donor/DonorProfile";
 import About from "./pages/donor/About";
 import BrowseCharities from "./pages/donor/BrowseCharities";
 import Notifications from "./pages/donor/Notifications";
-import CharityProfile from "./pages/donor/CharityProfile";
+import DonorCharityProfile from "./pages/donor/CharityProfile";
 import DonorReports from "./pages/donor/Reports";
 import Leaderboard from "./pages/donor/Leaderboard";
 
@@ -59,6 +60,7 @@ import CharityVolunteers from "./pages/charity/Volunteers";
 import CharityDocuments from "./pages/charity/Documents";
 import CharityNotifications from "./pages/charity/Notifications";
 import CharityReports from "./pages/charity/Reports";
+import CharityAdminProfile from "./pages/charity/CharityProfile";
 
 // --- 1. IMPORT THE NEW ADMIN COMPONENTS ---
 import { AdminLayout } from "./components/admin/AdminLayout";
@@ -94,6 +96,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/charities" element={<PublicCharities />} />
             <Route path="/charities/:id" element={<CharityDetail />} />
+            <Route path="/charity/profile/:id" element={<CharityPublicProfile />} />
             <Route path="/about" element={<PublicAbout />} />
             <Route path="/campaigns/:id" element={<CampaignPage />} />
             
@@ -130,7 +133,7 @@ const App = () => (
               <Route path="transparency" element={<FundTransparency />} />
               <Route path="profile" element={<DonorProfile />} />
               <Route path="charities" element={<BrowseCharities />} />
-              <Route path="charities/:id" element={<CharityProfile />} />
+              <Route path="charities/:id" element={<DonorCharityProfile />} />
               <Route path="reports" element={<DonorReports />} />
               <Route path="leaderboard" element={<Leaderboard />} />
               <Route path="about" element={<About />} />
@@ -158,7 +161,7 @@ const App = () => (
               <Route path="documents" element={<CharityDocuments />} />
               <Route path="reports" element={<CharityReports />} />
               <Route path="notifications" element={<CharityNotifications />} />
-              <Route path="profile" element={<CharityProfile />} />
+              <Route path="profile" element={<CharityAdminProfile />} />
               <Route path="settings" element={<CharitySettings />} />
             </Route>
 

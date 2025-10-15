@@ -58,17 +58,6 @@ export default function CharityDetail() {
   const [followLoading, setFollowLoading] = useState<boolean>(false);
   const API_URL = import.meta.env.VITE_API_URL;
 
-  useEffect(() => {
-    if (id) {
-      fetchCharityDetails();
-      fetchCampaigns();
-      fetchDocuments();
-      fetchFollowStatus();
-      fetchChannels();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, user?.role]);
-
   const fetchCharityDetails = async () => {
     try {
       const response = await fetch(`${API_URL}/api/charities/${id}`);
@@ -121,6 +110,34 @@ export default function CharityDetail() {
       // ignore
     }
   };
+
+  const fetchChannels = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+      if (!token) return; // Not logged in, skip loading channels
+      
+      const response = await fetch(`${API_URL}/api/charities/${id}/channels`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setChannels(data.data || data);
+      }
+    } catch (err) {
+      console.error('Failed to load donation channels:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      fetchCharityDetails();
+      fetchCampaigns();
+      fetchDocuments();
+      fetchFollowStatus();
+      fetchChannels();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, user?.role]);
 
   const toggleFollow = async () => {
     try {
